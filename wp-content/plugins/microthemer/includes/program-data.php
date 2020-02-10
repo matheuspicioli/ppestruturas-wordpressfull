@@ -422,93 +422,71 @@ $this->default_m_queries = array(
 	$this->unq_base.'1' => array(
 		"label" => __('Large Desktop', 'microthemer'),
 		"query" => "@media (min-width: 1200px)",
-		//"min" => 1200,
-		//"max" => 0
 	),
 	$this->unq_base.'2' => array(
 		"label" => __('Desktop & Tablet', 'microthemer'),
 		"query" => "@media (min-width: 768px) and (max-width: 979px)",
-		//"min" => 768,
-		//"max" => 979
 	),
 	$this->unq_base.'3' => array(
 		"label" => __('Tablet & Phone', 'microthemer'),
 		"query" => "@media (max-width: 767px)",
-		//"min" => 0,
-		//"max" => 767
 	),
 	$this->unq_base.'4' => array(
 		"label" => __('Phone', 'microthemer'),
 		"query" => "@media (max-width: 480px)",
-		//"min" => 0,
-		//"max" => 480
 	)
 );
 
-// alternative mobile first media queries
-$this->mobile_first_mqs = array(
-	$this->unq_base.'mf1' => array(
-		"label" => __('Tablet >', 'microthemer'),
-		"query" => "@media (min-width: 767px)",
-		//"min" => 767,
-		//"max" => 0
+// min and max width media queries
+$this->min_and_max_mqs = array(
+	$this->unq_base.'1' => array(
+		"label" => __('< 1200', 'microthemer'),
+		"query" => "@media (min-width: 1199.98px)",
 	),
-	$this->unq_base.'mf2' => array(
-		"label" => __('Desktop >', 'microthemer'),
-		"query" => "@media (min-width: 979px)",
-		//"min" => 979,
-		//"max" => 0
+	$this->unq_base.'2' => array(
+		"label" => __('< 980', 'microthemer'),
+		"query" => "@media (max-width: 979.98px)",
 	),
-	$this->unq_base.'mf3' => array(
-		"label" => __('Large Desktop >', 'microthemer'),
+	$this->unq_base.'3' => array(
+		"label" => __('< 768', 'microthemer'),
+		"query" => "@media (max-width: 767.98px)",
+	),
+	$this->unq_base.'4' => array(
+		"label" => __('< 480', 'microthemer'),
+		"query" => "@media (max-width: 479.98px)",
+	),
+	/*$this->unq_base.'5' => array(
+		"label" => __('< 360', 'microthemer'),
+		"query" => "@media (max-width: 359.98px)",
+	),
+	$this->unq_base.'6' => array(
+		"label" => __('480 >', 'microthemer'),
+		"query" => "@media (min-width: 480px)",
+	),*/
+	$this->unq_base.'7' => array(
+		"label" => __('768 >', 'microthemer'),
+		"query" => "@media (min-width: 768px)",
+	),
+	$this->unq_base.'8' => array(
+		"label" => __('980 >', 'microthemer'),
+		"query" => "@media (min-width: 980px)",
+	),
+	$this->unq_base.'9' => array(
+		"label" => __('1200 >', 'microthemer'),
 		"query" => "@media (min-width: 1200px)",
-		//"min" => 1200,
-		//"max" => 0
-	)
+	),
+	$this->unq_base.'10' => array(
+		"label" => __('1400 >', 'microthemer'),
+		"query" => "@media (min-width: 1400px)",
+	),
 );
 
-// semantically defined breakpoints
-$this->mobile_first_semantic_mqs = array(
-	$this->unq_base.'mfs1' => array(
-		"label" => __('Narrow <', 'microthemer'),
-		"query" => "@media (max-width: 480px)",
-		//"min" => 0,
-		//"max" => 480
-	),
-	$this->unq_base.'mfs2' => array(
-		"label" => __('2 Col >', 'microthemer'),
-		"query" => "@media (min-width: 767px)",
-		//"min" => 767,
-		//"max" => 0
-	),
-	$this->unq_base.'mfs3' => array(
-		"label" => __('2 to 3 Col', 'microthemer'),
-		"query" => "@media (min-width: 767px) and (max-width: 978px)",
-		//"min" => 767,
-		//"max" => 978
-	),
-	$this->unq_base.'mfs4' => array(
-		"label" => __('3 Col >', 'microthemer'),
-		"query" => "@media (min-width: 979px)",
-		//"min" => 979,
-		//"max" => 0
-	),
-	$this->unq_base.'mfs5' => array(
-		"label" => __('3 Col to Wide', 'microthemer'),
-		"query" => "@media (min-width: 979px) and (max-width: 1199px)",
-		//"min" => 979,
-		//"max" => 1199
-	),
-	$this->unq_base.'mfs6' => array(
-		"label" => __('Wide >', 'microthemer'),
-		"query" => "@media (min-width: 1200px)",
-		//"min" => 1200,
-		//"max" => 0
-	)
-);
-$this->mq_sets[esc_html__('Desktop first device MQs', 'microthemer')] = $this->default_m_queries;
-$this->mq_sets[esc_html__('Mobile first device MQs', 'microthemer')] = $this->mobile_first_mqs;
-$this->mq_sets[esc_html__('Mobile first semantic MQs', 'microthemer')] = $this->mobile_first_semantic_mqs;
+$this->mq_sets[esc_html__('Default device MQs', 'microthemer')] = $this->default_m_queries;
+/*$this->mq_sets[esc_html__('Mobile first device MQs', 'microthemer')] = $this->mobile_first_mqs;
+$this->mq_sets[esc_html__('Mobile first semantic MQs', 'microthemer')] = $this->mobile_first_semantic_mqs;*/
+$this->mq_sets[esc_html__('Min (mobile-first) MQs', 'microthemer')] = array_slice($this->min_and_max_mqs, 4, 4);
+$this->mq_sets[esc_html__('Max (desktop-first) MQs', 'microthemer')] = array_slice($this->min_and_max_mqs, 0, 4);
+$this->mq_sets[esc_html__('Min and max MQs', 'microthemer')] = $this->min_and_max_mqs;
 
 
 // default preferences for devs are a bit different
@@ -543,12 +521,14 @@ $this->default_preferences = array(
 	"allow_scss" => 0, // if enabled by default, invalid css/scss will prevent stylesheet update.
 	"server_scss" => 0, // give user option to compile scss on the server
 	"grid_focus" => 'gridtemplate',
+	"monitor_js_errors" => 1,
 	"generated_css_focus" => 0,
-	"gzip" => 1,
+	"gzip" => 0, // try having this off by default
 	"hide_ie_tabs" => 1,
 	"show_extra_actions" => 1, // have the icons showing by default (change)
 	"default_sug_values_set" => 0,
 	"grid_highlight" => 1,
+	"expand_grid" => 0, // this doesn't get saved
 	"minify_css" => 0, // because other plugins minify, and an extra thing that can go wrong
 	"dark_editor" => 0,
 	"draft_mode" => 0,
@@ -561,6 +541,7 @@ $this->default_preferences = array(
 	"manual_recompile_all_css" => 0,
 	"admin_bar_shortcut" => 1,
 	"top_level_shortcut" => 1, // with auto referrer this is more useful and should be on by default
+
 	"first_and_last" => 0,
 	"all_devices_default_width" => '',
 	"returned_ajax_msg" => '',
@@ -568,6 +549,7 @@ $this->default_preferences = array(
 	"edge_mode" => 0,
 	//"edge_config" => array(),
 	"tooltip_delay" => 500,
+	"num_history_points" => 50,
 	"clean_uninstall" => 0,
 	"my_props" => $this->default_my_props,
 	"custom_paths" => array('/'),
@@ -577,7 +559,7 @@ $this->default_preferences = array(
 		// and MT might be useful for authors converting custom code to GUI
 		$this->micro_root_url . 'active-styles.css'
 	),
-	"sidebar_size" => 300,
+	"sidebar_size" => 360,
 	"sidebar_size_category" => 'md',
 	"dock_editor_left" => 0,
 	"dock_options_left" => 0,
@@ -621,8 +603,6 @@ $this->default_preferences = array(
 		'typekit' => false,
 	),
 	'gfont_subset' => ''
-
-
 
 );
 
@@ -670,6 +650,7 @@ $this->default_preferences_dont_reset = array(
 	"m_queries" => $this->mq_min_max($arr),
 	"code_tabs" => $this->custom_code,
 	"initial_scale" => 0,
+	"abs_image_paths" => 0,
 	// I think I store true/false ie settings in preferences so that frontend script
 	// doesn't need to pull out all the options from the DB in order to enqueue the stylesheets.
 	// This will have an overhaul soon anyway.
@@ -686,6 +667,29 @@ $this->default_preferences_dont_reset = array(
 
 );
 
+// some preferences should only be set once we've checked WP dependent variables (e.g. integrations)
+if ($pd_context === 'setup_wp_dependent_vars'){
+
+	global $wpdb;
+	$revisions_table_name = $wpdb->prefix . "micro_revisions";
+	$fresh_install = !$this->check_table_exists($revisions_table_name, true);
+
+	// if oxygen is active and it's a fresh install
+	$default_preferences = array(
+
+		// if oxygen is active and it's a fresh install
+		"after_oxy_css" => !empty($this->integrations['oxygen']) && $fresh_install ? 1 : 0
+	);
+
+	$this->default_preferences = array_merge($this->default_preferences, $default_preferences);
+}
+
+// create micro-themes dir/blank active-styles.css, copy pie if doesn't exist
+$this->setup_micro_themes_dir();
+
+// get the file structure - and create micro_root dir if it doesn't exist
+$this->file_structure = $this->dir_loop($this->micro_root_dir);
+
 // get the styles from the DB
 $this->getOptions();
 
@@ -693,13 +697,9 @@ $this->getOptions();
 $this->getPropertyOptions();
 
 // get/set the preferences
-$this->getPreferences(true);
+$this->getPreferences(true, $pd_context);
 
-// create micro-themes dir/blank active-styles.css, copy pie if doesn't exist
-$this->setup_micro_themes_dir();
 
-// get the file structure - and create micro_root dir if it doesn't exist
-$this->file_structure = $this->dir_loop($this->micro_root_dir);
 //wp_die('<pre>'.print_r($this->file_structure, true).'</pre>');
 
 /*wp_die('<pre>'.print_r($this->get_sass_import_paths("
@@ -1054,7 +1054,7 @@ $this->menu = array(
 				'name' => esc_html__('Dock all options left', 'microthemer'),
 				'title' => esc_attr__("Dock all options to the left of the site preview", 'microthemer'),
 				'class' => 'toggle-dock-options-left',
-				'toggle' => $this->preferences['dock_options_left'],
+				'toggle' => !empty($this->preferences['dock_options_left']),
 				'data-pos' => esc_attr__('Dock all options left', 'microthemer'),
 				'data-neg' => esc_attr__('Dock all options top', 'microthemer'),
 			),
@@ -1065,7 +1065,7 @@ $this->menu = array(
 				'name' => esc_html__('Dock editor only left', 'microthemer'),
 				'title' => esc_attr__("Dock the code editor to the left of the site preview", 'microthemer'),
 				'class' => 'toggle-dock-editor-left',
-				'toggle' => $this->preferences['dock_editor_left'],
+				'toggle' => !empty($this->preferences['dock_editor_left']),
 				'data-pos' => esc_attr__('Dock editor left', 'microthemer'),
 				'data-neg' => esc_attr__('Dock editor top', 'microthemer'),
 			),
@@ -1077,7 +1077,7 @@ $this->menu = array(
 				'name' => esc_html__('Detach preview', 'microthemer'),
 				'title' => esc_attr__("Detach site preview for separate screen", 'microthemer'),
 				'class' => 'toggle-detached-preview',
-				'toggle' => $this->preferences['detach_preview'],
+				'toggle' => !empty($this->preferences['detach_preview']),
 				'data-pos' => esc_attr__('Detach site preview', 'microthemer'),
 				'data-neg' => esc_attr__('Attach site preview', 'microthemer'),
 			),

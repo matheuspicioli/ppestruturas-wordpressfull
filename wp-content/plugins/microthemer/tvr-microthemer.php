@@ -4,8 +4,8 @@ Plugin Name: Microthemer
 Plugin URI: https://themeover.com/microthemer
 Text Domain: microthemer
 Domain Path: /languages
-Description: Microthemer is a feature-rich visual design plugin for customizing the appearance of ANY WordPress Theme or Plugin Content (e.g. posts, pages, contact forms, headers, footers, sidebars) down to the smallest detail. For CSS coders, Microthemer is a proficiency tool that allows them to rapidly restyle a WordPress theme or plugin. For non-coders, Microthemer's intuitive interface and "Double-click to Edit" feature opens the door to advanced theme and plugin customization.
-Version: 6.0.0.0
+Description: Microthemer is a feature-rich visual design plugin for customizing the appearance of ANY WordPress Theme or Plugin Content (e.g. posts, pages, contact forms, headers, footers, sidebars) down to the smallest detail. For CSS coders, Microthemer is a proficiency tool that allows them to rapidly restyle a WordPress theme or plugin. For non-coders, Microthemer's intuitive point and click editing opens the door to advanced theme and plugin customization.
+Version: 6.0.8.0
 Author: Themeover
 Author URI: https://themeover.com
 */
@@ -138,11 +138,34 @@ if (!class_exists('tvr_common')) {
 				? $p['g_url_with_subsets']
 
 				// fallback to g_url if user has yet to save settings since g_url_with_subsets was added
-				: !empty($p['gfont_subset']) ? $p['g_url'].$p['gfont_subset'] : $p['g_url'];
+				: (!empty($p['gfont_subset']) ? $p['g_url'].$p['gfont_subset'] : $p['g_url']);
 
 			if (!empty($google_url)){
-				wp_register_style( 'microthemer_g_font', $google_url, false);
-				wp_enqueue_style( 'microthemer_g_font' );
+				tvr_common::mt_enqueue_or_add(!empty($p['after_oxy_css']), 'microthemer_g_font', $google_url);
+			}
+
+		}
+
+		public static function mt_enqueue_or_add($add, $handle, $url, $data_key = false, $data_val = false){
+
+			global $wp_styles;
+
+			// special case for loading CSS after Oxygen
+			if ($add){
+
+				$wp_styles->add($handle, $url);
+				$wp_styles->enqueue(array($handle));
+
+				if ($data_key){
+					$wp_styles->add_data($handle, $data_key, $data_val);
+				}
+
+				$wp_styles->do_items();
+			}
+
+			else {
+				wp_register_style($handle, $url, false);
+				wp_enqueue_style($handle);
 			}
 
 		}
@@ -160,8 +183,8 @@ if ( is_admin() ) {
 		// define
 		class tvr_microthemer_admin {
 
-			var $version = '6.0.0.0';
-			var $db_chg_in_ver = '5.5.0.0';
+			var $version = '6.0.8.0';
+			var $db_chg_in_ver = '6.0.6.5';
 			var $locale = '';
 			var $time = 0;
 			var $current_user_id = -1;
@@ -189,6 +212,7 @@ if ( is_admin() ) {
 			var $fontspage = 'tvr-fonts.php';
 			var $demo_video = 'https://themeover.com/videos/?name=gettingStarted';
 			var $targeting_video = 'https://themeover.com/videos/?name=targeting';
+			var $mt_admin_nonce = '';
 			var $wp_ajax_url = '';
 			var $total_sections = 0;
 			var $total_selectors = 0;
@@ -227,6 +251,7 @@ if ( is_admin() ) {
 			var $dis_text = '';
 			// @var array $preferences Stores the preferences for this plugin
 			var $preferences = array();
+			var $pre_update_preferences = array();
 			// @var array $file_structure Stores the micro theme dir file structure
 			var $file_structure = array();
 			// polyfills
@@ -372,25 +397,11 @@ if ( is_admin() ) {
 				// only initialize on plugin admin pages
 				if ( is_admin() and in_array($page, $this->all_pages) ) {
 
-
-					// check if intergrateable plugins are active
+					// check if integratable plugins are active
 					add_action( 'admin_init', array(&$this, 'check_integrations'));
 
-				    //setup vars that depend on WP being fully loaded
+				    // setup vars that depend on WP being fully loaded
 					add_action( 'admin_init', array(&$this, 'setup_wp_dependent_vars'));
-
-
-					/*$ext_updater_file = dirname(__FILE__) .'/includes/plugin-updates/1.5/plugin-update-checker.php';
-					if ( TVR_MICRO_VARIANT == 'themer' and file_exists($ext_updater_file) ) {
-						require $ext_updater_file;
-						$MyUpdateChecker = new PluginUpdateChecker(
-							'https://themeover.com/wp-content/tvr-auto-update/meta-info.json?'.$this->time, // prevent cached file from loading
-							__FILE__,
-							'microthemer'
-						);
-					}*/
-
-
 
 					// we don't want the WP admin bar on any Microthemer pages
 					add_filter('show_admin_bar', '__return_false');
@@ -429,6 +440,25 @@ if ( is_admin() ) {
 					}
 
 				}
+			}
+
+			function check_table_exists($table_name, $also_populated = false){
+
+				global $wpdb;
+
+				$exists = !empty(
+				    $wpdb->get_var(
+					    $wpdb->prepare("SHOW TABLES LIKE %s", $table_name)
+				    )
+				);
+
+				if (!$exists || !$also_populated){
+					return $exists;
+				}
+
+				$wpdb->query("SELECT id FROM $table_name");
+
+				return $exists && $wpdb->num_rows > 0;
 			}
 
 			// user's subscription has expired and they are capped at a version
@@ -478,6 +508,8 @@ if ( is_admin() ) {
 			// ensure preferences are set upon activation
 			function microthemer_activated(){
 
+				$pd_context = 'microthemer_activated';
+
 				// setup program data arrays (calls getPreferences() which also sets if nothing to get yet)
 				include dirname(__FILE__) .'/includes/program-data.php';
 
@@ -490,9 +522,11 @@ if ( is_admin() ) {
 
 			// add a link to the WP Toolbar (this was copied from frontend class - use better method later)
 			function custom_toolbar_link($wp_admin_bar) {
-				if (!current_user_can('administrator')){
+
+			    if (!current_user_can('administrator')){
 					return false;
 				}
+
 				if (!empty($this->preferences['top_level_shortcut'])
 				    and $this->preferences['top_level_shortcut'] == 1){
 					$parent = false;
@@ -500,18 +534,81 @@ if ( is_admin() ) {
 					$parent = 'site-name';
 				}
 
+				// root URL to MT UI
+				$href = $this->wp_blog_admin_url . 'admin.php?page=' . $this->microthemeruipage;
+
+				// if admin edit post or page - MT should load that page
+				$front = $this->get_url_from_edit_screen();
+
+				if ($front){
+
+				    $href.= '&mt_preview_url=' . rawurlencode($front['url'])
+					        . '&_wpnonce=' . wp_create_nonce( 'mt-preview-nonce' );
+
+					// not sure how to make a post
+				    if ($front['post_status'] === 'auto-draft'){
+						$href.= '&auto_save_draft='.$front['postID'];
+                    }
+
+					//wp_die('<pre>'.print_r($front, true).'</pre>');
+                }
+
 				$args = array(
 					'id' => 'wp-mcr-shortcut',
 					'title' => 'Microthemer',
 					'parent' => $parent,
-					'href' => $this->wp_blog_admin_url . 'admin.php?page=' . $this->microthemeruipage,
+					'href' => $href,
 					'meta' => array(
 						'class' => 'wp-mcr-shortcut',
 						'title' => __('Jump to the Microthemer interface', 'microthemer')
 					)
 				);
+
 				$wp_admin_bar->add_node($args);
 			}
+
+			function get_url_from_edit_screen(){
+
+				global $post;
+
+			    if ($post && function_exists('get_current_screen')) {
+
+			        $current_screen = get_current_screen();
+			        $post_type = $current_screen->post_type;
+			        $isPostOrPage = ($post_type === 'post' || $post_type === 'page');
+                    $isEditScreen = $isPostOrPage && isset($_GET['action']) && $_GET['action'] === 'edit'
+                                    && !empty($_GET['post']);
+				    $isAddScreen = $isPostOrPage && $current_screen->action === 'add';
+
+				    //wp_die('<pre>'.print_r($post, true).'</pre>');
+
+			        // if add new or saved draft use preview URL
+				    if ($isAddScreen || $post->post_status !== 'publish'){
+
+					    if ( $url = get_preview_post_link($post->ID) ){
+						    return array(
+                                'url' => $url,
+                                'post_status' => $post->post_status,
+                                'postID' => $post->ID
+                            );
+					    }
+                    }
+
+                    // get link for published post
+                    else if ($isEditScreen){
+					    if ( $url = get_permalink( intval($_GET['post']) ) ){
+						    return array(
+							    'url' => $url,
+							    'post_status' => $post->post_status
+						    );
+					    }
+                    }
+
+					//wp_die('<pre>'.print_r(get_current_screen()->id, true).'</pre>');
+				}
+
+				return false;
+            }
 
 			function log_subscription_check(){
 
@@ -554,7 +651,8 @@ if ( is_admin() ) {
 
 				// remote check conditions
 				$after_renewal_check = (!empty($s['renewal_check']) and $this->time > $renewal_time);
-				$higher_than_capped = (!empty($s['capped_version']) and version_compare($s['capped_version'], $this->version) < 0);
+				$higher_than_capped = (!empty($s['capped_version']) and
+                                       version_compare($s['capped_version'], $this->version) < 0);
 				$retro_check_needed = empty($p['retro_sub_check_done']);
 
 				// if subscription check needed
@@ -818,19 +916,19 @@ if ( is_admin() ) {
             }
 
 			// set defaults for user's property preferences (this runs on every page load)
-			function set_my_props_defaults(){
+			function maybe_set_my_props_defaults(){
 
 				$log = array(
 				   'update2' => false
                 );
 
 				// for resetting during development
-				$this->preferences['my_props']['sug_values'] = array();
-				$this->preferences['default_sug_values_set'] = 0;
-				$this->preferences['my_props_conversion_done'] = false;
+				/*$this->preferences['my_props']['sug_values'] = array();
+				$this->preferences['default_sug_values_set'] = 0;*/
 
 				foreach ($this->propertyoptions as $prop_group => $array){
-					foreach ($array as $prop => $meta) {
+
+				    foreach ($array as $prop => $meta) {
 
 						// we're only interested in props with default units or suggested values
 						if ( empty($meta['default_unit']) and empty($meta['sug_values']) ){
@@ -851,10 +949,19 @@ if ( is_admin() ) {
 					}
 				}
 
-				// prevent conversion code from running again.
-				//$this->preferences['my_props_conversion_done'] = true;
+				// Save if changes were made to my_props
+                if ($log['update2']){
 
-				return $log['update2'];
+	                $this->savePreferences(
+	                    array(
+                            'my_props' =>  $this->preferences['my_props']
+                        )
+                    );
+
+	                return true;
+                }
+
+				return false;
 			}
 
 			function prepare_sug_values($log, $meta, $prop, $extra = ''){
@@ -1011,46 +1118,37 @@ if ( is_admin() ) {
 			}
 
 			// ensure all preferences are defined
-			function ensure_defined_preferences($full_preferences){
+			function ensure_defined_preferences($full_preferences, $pd_context){
 
-			    $update = $update2 = false;
-				foreach ($full_preferences as $key => $value){
-					if ( !isset($this->preferences[$key])){
+				// copy previous preferences for history backup
+				$this->pre_update_preferences = $this->preferences;
+
+				// backup previous version settings as special history entry if new version
+                if ($this->new_version && $pd_context == 'microthemer_activated'){
+	                $this->pre_upgrade_backup();
+                }
+
+			    // check if all preference are defined
+			    $pref_array = array();
+			    $update = false;
+			    foreach ($full_preferences as $key => $value){
+					if (!isset($this->preferences[$key])){
+						$pref_array[$key] = $value;
 						$update = true;
-						$this->preferences[$key] = $value;
 					}
 				}
 
-				// new CSS props will be added over time and the default unit etc must be assigned.
-				$update2 = $this->set_my_props_defaults();
-
-				// fix for bug when color could be set with extra nesting - remove in May 2019
-				if(isset($this->preferences['my_props']['sug_values']['color']['recent']['recent'])){
-					$this->preferences['my_props']['sug_values']['color']['recent'] = array();
-					$update2 = true;
-				}
-
-				// convert user's non_section config to modern format with meta holding little values
-                // meta always gets sent in ajax save - uncomment when tested
-                /*$this->preferences['speed_conversion_done'] = false; // dev debug
-				$update2 = true;*/
-                if (empty($this->preferences['speed_conversion_done'])){
-                    $this->do_data_conversions_for_speed();
-	                $this->preferences['speed_conversion_done'] = true;
-	                $update2 = true;
+				// save new preference definitions if found
+				if ($update) {
+					$this->savePreferences($pref_array);
                 }
 
-                // updating to the new synced code-gui is a big deal so make backup
-				if (empty($this->preferences['synced_code_gui_done'])){
-					$this->pre_upgrade_backup();
-					$this->preferences['synced_code_gui_done'] = true;
-					$update2 = true;
-				}
+				// new CSS props will be added over time and the default unit etc must be assigned.
+				$this->maybe_set_my_props_defaults();
 
-				// save new defined prefs if necessary
-				if ($update or $update2){
-					$this->savePreferences($this->preferences);
-				}
+				// convert user's non_section config to modern format with meta holding little values
+                // meta always gets sent in ajax save
+				$this->maybe_do_data_conversions_for_speed();
 
 				// ensure view_import_stylesheets list has current theme style.css (saves preferences too)
 				$this->update_css_import_urls(get_stylesheet_directory_uri() . '/style.css', 'ensure');
@@ -1059,95 +1157,137 @@ if ( is_admin() ) {
 			// create a backup of the user's settings in history and as a design pack
 			function pre_upgrade_backup(){
 
-			    // no need to backup if no settings have been saved
+				// no need to backup if no settings have been saved
 				global $wpdb;
-				$this->createRevsTable(); // only creates table if doesn't exist or needs updating
+				$this->maybeCreateOrUpdateRevsTable(); // only creates table if doesn't exist or needs updating
 				$wpdb->get_results("select id from ".$wpdb->prefix . "micro_revisions");
+
+
+				$previous_version = !empty($this->preferences['previous_version'])
+                    ? $this->preferences['previous_version']
+                    : 'Previous version';
 
 				if ($wpdb->num_rows > 0){
 
-				    // add settings before update to revision table, include preferences in this special revision.
+					// add settings before update to revision table, include preferences in this special revision.
 					if (!$this->updateRevisions(
 						$this->options,
 						$this->json_format_ua(
-							'save-interface lg-icon',
-							esc_html__('Pre-upgrade backup settings', 'microthemer')
+							'display-preferences lg-icon',
+							esc_html__($previous_version.' settings (before updating to '.$this->version.')',
+                                'microthemer')
 						),
 						true, // otherwise error on new installs
-						$this->preferences
+						$this->preferences, //$backup_preferences,
+                        true
 					)) {
 						$this->log('','','error', 'revisions');
 					}
 
+                    // clean any pre-update packs MT created when it using that system
+                    $this->clean_pre_upgrade_backup_packs();
+
 					// export the old settings too, to ensure history doesn't get wiped
-					$this->update_json_file('Pre-upgrade backup settings', 'new', true, $this->preferences);
-                }
-
-            }
-
-			// a few minor data format changes were made for the speed version. This runs once.
-			function do_data_conversions_for_speed(){
-
-			    // create backup
-			    $this->pre_upgrade_backup();
-
-			    $non_section = &$this->options['non_section'];
-			    $keys = array(
-			        'adv_wizard_focus', 'css_focus', 'device_focus', // just pref now
-                    'last_save_time' // move to meta
-                );
-
-			    // remove keys that were hack for non-queued settings save
-			    foreach ($keys as $key){
-				    $item = &$this->get_or_update_item($non_section, array('trail' => array($key), 'action' => 'get'));
-				    //$this->show_me.= '<pre>key '.$key. ' $item: '.$item.'</pre>';
-				    if ($item){
-
-					    // move certain key values to meta
-				        if ($key === 'last_save_time'){
-					        $this->get_or_update_item($non_section, array(
-						        'action' => 'append',
-						        'trail' => array('meta'),
-						        'key' => $key,
-						        'data' => $item
-					        ));
-                        }
-
-				        unset($non_section[$key]);
-                    }
-                }
-
-			    // we don't need to track view state outside of regular sel
-                if (!empty($non_section['view_state'])){
-                    unset($non_section['view_state']);
-                }
-
-				// we only use active_queries for import/revision restore now
-				if (!empty($non_section['active_queries'])){
-					unset($non_section['active_queries']);
+                    // no, history will suffice as pre_upgrade only gets cleared when another upgrade happens
+                    // also this was creating mulitple packs as $alt_name was preventing overwrite
+					//$this->update_json_file('Pre-upgrade backup settings', 'new', true, $this->preferences);
 				}
 
-				// remove recent sug for background_image and list_style_image which will be basename - invalid
-                $image_props = array('list_style_image', 'background_image');
-				$types = array('recent', 'copiedSrc');
-				foreach ($image_props as $image_prop){
-					foreach ($types as $type){
-						$this->get_or_update_item(
-							$this->preferences['my_props']['sug_values'],
-							array(
-								'trail' => array($image_prop, $type),
-								'action' => 'replace',
-								'data' => array()
-							)
-						);
+			}
+
+		    // clean any pre-update packs MT created when it using that system
+			function clean_pre_upgrade_backup_packs(){
+
+			    $pattern = '/pre-upgrade-backup-settings(?:-\d)?/';
+
+			    // loop packs
+				foreach ($this->file_structure as $dir => $array) {
+
+					// delete matches
+				    if (preg_match($pattern, $dir)) {
+						$this->tvr_delete_micro_theme($dir);
+					}
+				}
+            }
+
+
+			// a few minor data format changes were made for the speed version. This runs once.
+			function maybe_do_data_conversions_for_speed(){
+
+				if (empty($this->preferences['speed_conversion_done'])){
+
+					// create backup
+					//$this->pre_upgrade_backup(); - this happens on every update
+
+					$non_section = &$this->options['non_section'];
+					$keys = array(
+						'adv_wizard_focus', 'css_focus', 'device_focus', // just pref now
+						'last_save_time' // move to meta
+					);
+
+					// remove keys that were hack for non-queued settings save
+					foreach ($keys as $key){
+						$item = &$this->get_or_update_item($non_section, array('trail' => array($key), 'action' => 'get'));
+						//$this->show_me.= '<pre>key '.$key. ' $item: '.$item.'</pre>';
+						if ($item){
+
+							// move certain key values to meta
+							if ($key === 'last_save_time'){
+								$this->get_or_update_item($non_section, array(
+									'action' => 'append',
+									'trail' => array('meta'),
+									'key' => $key,
+									'data' => $item
+								));
+							}
+
+							unset($non_section[$key]);
+						}
 					}
 
-                }
+					// we don't need to track view state outside of regular sel
+					if (!empty($non_section['view_state'])){
+						unset($non_section['view_state']);
+					}
 
-				// update DB
-				update_option($this->optionsName, $this->options);
+					// we only use active_queries for import/revision restore now
+					if (!empty($non_section['active_queries'])){
+						unset($non_section['active_queries']);
+					}
 
-                //$this->show_me.= '<pre>modified non_section what '.$this->options['css_focus'].'</pre>';
+					// remove recent sug for background_image and list_style_image which will be basename - invalid
+					$image_props = array('list_style_image', 'background_image');
+					$types = array('recent', 'copiedSrc');
+					foreach ($image_props as $image_prop){
+						foreach ($types as $type){
+							$this->get_or_update_item(
+								$this->preferences['my_props']['sug_values'],
+								array(
+									'trail' => array($image_prop, $type),
+									'action' => 'replace',
+									'data' => array()
+								)
+							);
+						}
+
+					}
+
+					// update preferences
+					$this->savePreferences(
+						array(
+							'speed_conversion_done' => true,
+							'my_props' =>  $this->preferences['my_props']
+						)
+					);
+
+					// update DB
+					update_option($this->optionsName, $this->options);
+
+					//$this->show_me.= '<pre>modified non_section what '.$this->options['css_focus'].'</pre>';
+
+				}
+
+
 
 			}
 
@@ -1466,6 +1606,8 @@ if ( is_admin() ) {
 				// ajax url - requires wp_create_nonce()
 				$this->wp_ajax_url = $this->wp_blog_admin_url . 'admin-ajax.php' . '?action=mtui&mcth_simple_ajax=1&page='.$this->microthemeruipage.'&_wpnonce='.wp_create_nonce('mcth_simple_ajax');
 
+				$pd_context = 'setup_wp_dependent_vars';
+
 				// setup program data arrays (program data default MQs are dependent on which builder is active)
 				include dirname(__FILE__) .'/includes/program-data.php';
 
@@ -1483,7 +1625,8 @@ if ( is_admin() ) {
 				$check = array(
 					'beaver_builder' => 'bb-plugin/fl-builder.php',
 					'beaver_builder_lite' => 'beaver-builder-lite-version/fl-builder.php',
-					'elementor' => 'elementor/elementor.php'
+					'elementor' => 'elementor/elementor.php',
+					'oxygen' => 'oxygen/functions.php'
 				);
 
 				// set config
@@ -1555,6 +1698,8 @@ if ( is_admin() ) {
 
 
 				}
+
+				// get oxygen breakpoints $media_queries_list (global)
 
 
 			}
@@ -2129,6 +2274,11 @@ if ( is_admin() ) {
 					// ready combo for css_units
 					$combo['css_units'] = array_keys( $this->css_units );
 
+					// num history saves
+                    $combo['num_history_points'] = array(
+                            '50', '75', '100', '150', '200', '300'
+                    );
+
 					// example scripts for enqueuing
 					$combo['enq_js'] = array( 'jquery', 'jquery-form', 'jquery-color', 'jquery-masonry', 'masonry', 'jquery-ui-core', 'jquery-ui-widget', 'jquery-ui-accordion', 'jquery-ui-autocomplete', 'jquery-ui-button', 'jquery-ui-datepicker', 'jquery-ui-dialog', 'jquery-ui-draggable', 'jquery-ui-droppable', 'jquery-ui-menu', 'jquery-ui-mouse', 'jquery-ui-position', 'jquery-ui-progressbar', 'jquery-ui-selectable', 'jquery-ui-resizable', 'jquery-ui-selectmenu', 'jquery-ui-sortable', 'jquery-ui-slider', 'jquery-ui-spinner', 'jquery-ui-tooltip', 'jquery-ui-tabs', 'jquery-effects-core', 'jquery-effects-blind', 'jquery-effects-bounce', 'jquery-effects-clip', 'jquery-effects-drop', 'jquery-effects-explode', 'jquery-effects-fade', 'jquery-effects-fold', 'jquery-effects-highlight', 'jquery-effects-pulsate', 'jquery-effects-scale', 'jquery-effects-shake', 'jquery-effects-slide', 'jquery-effects-transfer', 'wp-mediaelement', 'schedule', 'suggest', 'thickbox', 'hoverIntent', 'jquery-hotkeys', 'sack', 'quicktags', 'iris', 'json2', 'plupload', 'plupload-all', 'plupload-html4', 'plupload-html5', 'plupload-flash', 'plupload-silverlight', 'underscore', 'backbone' );
 					sort($combo['enq_js']);
@@ -2491,7 +2641,7 @@ if ( is_admin() ) {
 			}
 
 			// @return array - Retrieve the plugin plugin preferences from the database.
-			function getPreferences($special_checks = false) {
+			function getPreferences($special_checks = false, $pd_context = false) {
 
 				$full_preferences = array_merge($this->default_preferences, $this->default_preferences_dont_reset);
 
@@ -2509,16 +2659,22 @@ if ( is_admin() ) {
 				// checks we only need to do once when this function is first called
 				if ($special_checks){
 
+				    /*wp_die('the special '. !empty($this->preferences['version']) . ' '.$this->preferences['version']. ' '.$this->version. ' '.($this->preferences['version'] != $this->version));*/
+
 				    // check if this is a new version of Microthemer
-					if (!empty($this->preferences['version']) && $this->preferences['version'] != $this->version){
-						$this->new_version = true;
+					if (empty($this->preferences['version']) || $this->preferences['version'] != $this->version){
+
+					    $this->new_version = true;
+
+					    // maybe update revisions table
+						$this->maybeCreateOrUpdateRevsTable();
 
 						// signal that all selectors should be recompiled (to ensure latest data structure)
 						$this->update_preference('manual_recompile_all_css', 1);
 					}
 
 					// ensure preferences are defined (for when I add new preferences that upgrading users won't have)
-					$this->ensure_defined_preferences($full_preferences);
+					$this->ensure_defined_preferences($full_preferences, $pd_context);
 
 					// manually override user preferences after code changes
 					$this->maybe_manually_override_preferences();
@@ -2540,8 +2696,9 @@ if ( is_admin() ) {
 				}
 
 				// store the version so e.g. inactive functions.php code will load most recent PIE / animation-events.js
-				if (!empty($thePreferences['version']) and $thePreferences['version'] != $this->version){
-					$thePreferences['previous_version'] = $thePreferences['version'];
+				$previous_version = empty($thePreferences['version']) ? 0 : $thePreferences['version'];
+				if (!$previous_version || $previous_version != $this->version){
+					$thePreferences['previous_version'] = $previous_version;
 					$thePreferences['version'] = $this->version;
 				}
 
@@ -2664,6 +2821,11 @@ if ( is_admin() ) {
 						$rel = 'rel="'.$array['combobox'].'"';
 						$arrow = '<span class="combo-arrow '.$arrow_class.'"></span>';
 					}
+
+					if (!empty($input_id)){
+						$input_id = 'id="'.$input_id.'"';
+                    }
+
 					?>
                     <li class="tvr-input-wrap <?php echo $hidden; ?>">
                         <label class="text-label">
@@ -2672,7 +2834,7 @@ if ( is_admin() ) {
 							</span>
                         </label>
                         <input type='text' autocomplete="off" name='<?php echo esc_attr($input_name); ?>'
-                               id="<?php echo $input_id; ?>"
+                               <?php echo $input_id; ?>
                                class="<?php echo $class . ' ' . $input_class; ?>" <?php echo $rel; ?>
                                value='<?php echo esc_attr($input_value); ?>' />
 						<?php echo $arrow; ?>
@@ -2682,10 +2844,13 @@ if ( is_admin() ) {
 			}
 
 			// create revisions table if it doesn't exist
-			function createRevsTable() {
+			function maybeCreateOrUpdateRevsTable() {
 				global $wpdb;
 				$table_name = $wpdb->prefix . "micro_revisions";
 				$micro_ver_num = get_option($this->micro_ver_name);
+
+				/*wp_die('the table should update' . ' ' . ($micro_ver_num > $this->db_chg_in_ver) . ' '  .$micro_ver_num . '  '.$this->db_chg_in_ver);*/
+
 				// only execut following code if table doesn't exist.
 				// dbDelta function wouldn't overwrite table,
 				// But table version num shouldn't be updated with current plugin version if it already exists
@@ -2702,8 +2867,13 @@ if ( is_admin() ) {
 						data_size VARCHAR(10) DEFAULT '' NOT NULL,
 						settings longtext NOT NULL,
 						preferences longtext DEFAULT NULL,
+						saved BOOLEAN DEFAULT 0,
+						upgrade_backup BOOLEAN DEFAULT 0,
 						UNIQUE KEY id (id)
 						) $charset_collate;";
+
+					//wp_die('the table should update' . $sql);
+
 					require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 					dbDelta($sql);
 
@@ -2739,13 +2909,15 @@ if ( is_admin() ) {
 			}
 
 			// Update the Revisions Table
-			function updateRevisions($save_data, $user_action = '', $tryCreate = true, $preferences = false) {
+			function updateRevisions(
+			        $save_data, $user_action = '', $tryCreate = true, $preferences = false, $upgrade_backup = false
+            ) {
 
 			    $user_action = html_entity_decode($user_action);
 
 				// create/update revisions table if it doesn't already exist or is out of date
 				if ($tryCreate){
-					$this->createRevsTable();
+					$this->maybeCreateOrUpdateRevsTable();
 				}
 
 				// include the user's current media queries form restoring back
@@ -2769,6 +2941,7 @@ if ( is_admin() ) {
 						// pass in preferences when a revision should revert to workspace settings
                         // adding this so users can rollback to a pre-speed version of MT in case of an upgrade issue
 						'preferences' => ($preferences ? serialize($preferences) : false),
+						'upgrade_backup' => $upgrade_backup,
                 ));
 
 				/*$this->log(
@@ -2778,14 +2951,45 @@ if ( is_admin() ) {
 
 				//$this->show_me.= '<pre>$rows_affected:  '.$rows_affected.'</pre>';
 
+                $default_num_revs = 50;
+                $max_revisions = !empty($this->preferences['num_history_points'])
+                        ? intval($this->preferences['num_history_points'])
+                        : $default_num_revs;
+
+                //
+                if ($max_revisions > 300 or $max_revisions < 1){
+                    $max_revisions = $default_num_revs;
+                }
+
+				$maybe_exclude_backups = !$upgrade_backup ? 'and upgrade_backup != 1' : '';
+
 				// check if an old revision needs to be deleted
-				$revs = $wpdb->get_results("select id from $table_name order by id asc");
-				if ($wpdb->num_rows > 50) {
-					//$sql = "delete from $table_name where id = ".$wpdb->escape($revs[0]->id);
-					$wpdb->query( $wpdb->prepare("delete from $table_name where id = %d", $revs[0]->id) );
+				$wpdb->get_results("select id from $table_name 
+				where saved != 1 $maybe_exclude_backups order by id asc");
+
+				if ($wpdb->num_rows > $max_revisions) {
+
+				    $excess_rows = intval($wpdb->num_rows - $max_revisions);
+
+                    // this will not delete saved or backups for regular saves. And wont delete saved backups ever.
+                    $sql = "delete from $table_name 
+                    where saved != 1 $maybe_exclude_backups order by id asc limit $excess_rows";
+					$wpdb->query($sql);
+
 				}
 				return true;
 			}
+
+			function updateRevisionSaveStatus($rev_id, $rev_save_status){
+			    global $wpdb;
+				$table_name = $wpdb->prefix . "micro_revisions";
+				$wpdb->query(
+					$wpdb->prepare(
+					    "update $table_name set saved = %d where id = %d",
+                        $rev_save_status, $rev_id
+                    )
+				);
+            }
 
 			// adjust unix time stamp for local time
 			function adjust_unix_timestamp_for_local($unix_timestamp, $format = 'timestamp'){
@@ -2847,7 +3051,7 @@ if ( is_admin() ) {
 			function getRevisions() {
 
 				// create/update revisions table if it doesn't already exist or is out of date
-				$this->createRevsTable();
+				$this->maybeCreateOrUpdateRevsTable();
 
 				// get the full array of revisions
 				global $wpdb;
@@ -2855,7 +3059,7 @@ if ( is_admin() ) {
 				//$revs = $wpdb->get_results("select id, user_action, data_size, date_format(time, '%D %b %Y %H:%i') as datetime
 				/*$revs = $wpdb->get_results("select id, user_action, data_size, unix_timestamp(time) as unix_timestamp
 				from $table_name order by id desc");*/
-				$revs = $wpdb->get_results("select id, user_action, data_size, time from $table_name order by id desc");
+				$revs = $wpdb->get_results("select id, user_action, data_size, time, saved from $table_name order by id desc");
 				$total_rows = $wpdb->num_rows;
 				// if no revisions, explain
 				if ($total_rows == 0) {
@@ -2869,6 +3073,8 @@ if ( is_admin() ) {
 				//esc_html__('The only revision is a copy of your current settings.', 'microthemer') .
 				//'</span>';
 				//}
+				//<th> | ' . esc_html__('Save', 'microthemer') . '</th>
+				//<!--<td class="rev-save">Save</td>-->
 				// revisions exist so prepare table
 				//<th>' . esc_html__('Num', 'microthemer') . '</th>
 				//<th>' . esc_html__('Size', 'microthemer') . '</th>
@@ -2881,6 +3087,8 @@ if ( is_admin() ) {
 					<th>' . esc_html__('Time', 'microthemer') . '</th>
 					<th colspan="2">' . esc_html__('User Action', 'microthemer') . '</th>
 					<th>' . esc_html__('Restore', 'microthemer') . '</th>
+					<th>' . esc_html__('Save', 'microthemer') . '</th>
+					
 				</tr>
 				</thead>';
 
@@ -2908,18 +3116,30 @@ if ( is_admin() ) {
 						$main_class = $ua['main_class'];
 					}
 
+					// saved lock icon
+                    $rev_is_saved = !empty($rev->saved);
+					$save_rev_pos = esc_html__('Permanently save restore point', 'microthemer');
+					$save_rev_neg = esc_html__('Unsave restore point', 'microthemer');
+					$rev_is_saved_class = $rev_is_saved ? ' revision-is-saved' : '';
+					$rev_save_title = $rev_is_saved ? $save_rev_neg : $save_rev_pos;
+					$saved_icon = '<span class="save-revision'.$rev_is_saved_class.'" 
+					data-pos="'.$save_rev_pos.'" data-neg="'.$save_rev_neg.'" title="'.$rev_save_title.'"
+					rel="'.$rev->id.'"></span>';
+
 					$niceDate = date('l jS \of F Y H:i:s', $local_timestamp);
 
 					//<td class="rev-num">'.$total_rows.'</td>
 					//<td class="rev-size">'.$rev->data_size.'</td>
 					$rev_table.= '
-					<tr class="'.$legacy_new_class.'">
+					<tr class="'.$legacy_new_class.$rev_is_saved_class.'">
 						<td class="rev-size">'.$rev->data_size.'</td>
 						<td class="rev-time tvr-help" title="'.$niceDate.'">'.
 					             sprintf(esc_html__('%s ago', 'microthemer'), $time_ago).'</td>
 						<td class="rev-icon '.$main_class.'">'.$rev_icon.'</td>
 						<td class="rev-action '.$main_class.'">'.$user_action.'</td>
-						<td>';
+						<td>
+					
+						';
 					if ($i == 0) {
 						$rev_table.= esc_html__('Current', 'microthemer');
 					}
@@ -2927,6 +3147,7 @@ if ( is_admin() ) {
 						$rev_table.='<span class="link restore-link" rel="mt_action=restore_rev&tvr_rev='.$rev->id.'">' . esc_html__('Restore', 'microthemer') . '</span>';
 					}
 					$rev_table.='</td>
+                         <td class="rev-save">'.$saved_icon.'</td>
 					</tr>';
 					--$total_rows;
 					++$i;
@@ -3387,8 +3608,8 @@ if ( is_admin() ) {
 				else if ($last_save_time){
 
 					// do safety check to make sure newer settings haven't been applied in another tab
-					// allow passed last save time to be 1 second out due to quirk of resave I haven't fully understood
-					if ( ($last_save_time) < $this->options['non_section']['last_save_time'] ){
+					// allow passed last save time to be 15 seconds out due to quirk of resave I haven't fully understood
+					if ( ($last_save_time + 10) < ($this->options['non_section']['last_save_time']) ){
 
 						$this->log(
 							esc_html__('Multiple tabs/users issue', 'microthemer'),
@@ -3666,7 +3887,11 @@ if ( is_admin() ) {
 					} elseif ($preset == 'json-decode'){
 						$this->globalmessage[++$this->ei]['short'] = __('Decode json error', 'microthemer');
 						$this->globalmessage[$this->ei]['type'] = 'error';
-						$this->globalmessage[$this->ei]['long'] = '<p>' . sprintf(esc_html__('WordPress was not able to convert %s into a usable format.', 'microthemer'), $this->root_rel($vars['json_file']) ) . '</p>';
+						$this->globalmessage[$this->ei]['long'] = '<p>' . sprintf(esc_html__('WordPress was not able to convert %s into a usable format.', 'microthemer'), $this->root_rel($vars['json_file']) ) . '</p>
+<p>JSON Error code: '. $this->json_last_error() . '</p>';
+
+						//wp_die('<pre>'.$this->globalmessage[++$this->ei].'</pre>');
+
 					}
 
 				} else {
@@ -3674,6 +3899,14 @@ if ( is_admin() ) {
 					$this->globalmessage[$this->ei]['type'] = $type;
 					$this->globalmessage[$this->ei]['long'] = $long;
 				}
+			}
+
+			function json_last_error(){
+				if (function_exists('json_last_error')){
+					return json_last_error();
+				}
+
+				return '';
 			}
 
 			// save ajax-generated global msg in db for showing on next page load
@@ -3873,7 +4106,8 @@ if ( is_admin() ) {
 
 			// update the iframe preview url
 			function maybe_set_preview_url($nonce_key = false){
-				if (isset($_GET['mt_preview_url'])) {
+
+			    if (isset($_GET['mt_preview_url'])) {
 
 					// if we're on the demo site, skip nonce check but only allow page to be set, not arbitrary domain
 					$demo_site = $this->is_demo_site();
@@ -3888,11 +4122,24 @@ if ( is_admin() ) {
 
 					// update preview url in DB
 					$url = strip_tags(rawurldecode($_GET['mt_preview_url']));
+
 					//$this->show_me.= 'raw:' . $_GET['mt_preview_url'] . '<br />';
 					//$this->show_me.= 'rawurldecode:' . $url. '<br />';
 					$pref_array['preview_url'] = tvr_common::strip_page_builder_and_preview_params($url);
 
 					//$this->show_me.= 'page_builder:' . $url. '<br />';
+
+                    // ensure early auto-save draft have valid preview rather than 404
+                    // we don't actually need this as WP warns when clicking MT link if user hasn't saved draft
+                    /*if (isset($_GET['auto_save_draft'])){
+	                    //wp_die('<pre>'.print_r($_GET, true).'</pre>');
+                        wp_update_post(
+                            array(
+                                'ID' => intval($_GET['auto_save_draft']),
+                                'post_status' => 'draft'
+                            )
+                        );
+                    }*/
 
 					// path won't be set if this is triggered after user clicked WP Toolbar MT link
 					if (!empty($_GET['mt_preview_path'])){
@@ -4172,6 +4419,13 @@ if ( is_admin() ) {
 							wp_die();
 						}
 
+						// remember the grid highlight status
+						if (isset($_GET['grid_highlight'])) {
+							$pref_array['grid_highlight'] = intval($_GET['grid_highlight']);
+							$this->savePreferences($pref_array);
+							wp_die();
+						}
+
 
 						// wizard footer/right dock
 						if (isset($_GET['dock_wizard_right'])) {
@@ -4288,6 +4542,15 @@ if ( is_admin() ) {
 							$pref_array['mq_device_focus'] = htmlentities($_GET['mq_device_focus']);
 							$this->savePreferences($pref_array);
 							// kill the program - this action is always requested via ajax. no message necessary
+							wp_die();
+						}
+
+						// active MQ tab
+						if (isset($_GET['rev_save_status'])) {
+							$this->updateRevisionSaveStatus(
+								intval($_GET['rev_id']),
+							    intval($_GET['rev_save_status'])
+                            );
 							wp_die();
 						}
 
@@ -4894,7 +5157,7 @@ if ( is_admin() ) {
 					}
 
 					// if user navigates from front to MT via toolbar, set previous front page in preview
-					$this->maybe_set_preview_url('mt-front-nonce');
+					$this->maybe_set_preview_url('mt-preview-nonce');
 
 					// maybe check valid subscription
 					$this->maybe_check_subscription();
@@ -5587,6 +5850,7 @@ if ( is_admin() ) {
 
 
 				}
+
 				return $rel_path;
 			}
 
@@ -5987,7 +6251,7 @@ if ( is_admin() ) {
                         ? $this->preferences[$dialog_tab_param]
                         : 0;
 
-					$active_tab = $dialog_tab_param === 'display_css_code'
+					$active_tab = (!empty($this->preferences['generated_css_focus']) && $dialog_tab_param === 'display_css_code')
 						? $this->preferences['generated_css_focus']
 						: '0';
 
@@ -6702,13 +6966,13 @@ if ( is_admin() ) {
 				$html = '';
 				//$html.= print_r($on, true);
 				$html.= '
-				<div '.$id.' class="onoffswitch ui-toggle uit-par '.$on.'"
+				<div '.$id.' class="mtonoffswitch ui-toggle uit-par '.$on.'"
 				data-aspect="'.$item_key.'" '.$pos_neg.' '.$title.'>
-					<input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox"
-					id="myonoffswitch-'.$item_key.'">
-					<label class="onoffswitch-label ui-toggle" for="myonoffswitch-'.$item_key.'">
-						<span class="onoffswitch-inner ui-toggle"></span>
-						<span class="onoffswitch-switch ui-toggle"></span>
+					<input type="checkbox" name="mtonoffswitch" class="mtonoffswitch-checkbox"
+					id="mymtonoffswitch-'.$item_key.'">
+					<label class="mtonoffswitch-label ui-toggle" for="mymtonoffswitch-'.$item_key.'">
+						<span class="mtonoffswitch-inner ui-toggle"></span>
+						<span class="mtonoffswitch-switch ui-toggle"></span>
 					</label>
 				</div>';
 				return $html;
@@ -9438,10 +9702,12 @@ if ( is_admin() ) {
 
 				}
 				// update the theme_in_focus value in the preferences table
-				$pref_array['theme_in_focus'] = $name;
-				if (!$this->savePreferences($pref_array)) {
-					// not much cause for returning an error
-				}
+				$this->savePreferences(
+					array(
+						'theme_in_focus' => $name,
+					)
+				);
+
 				// if still no error, the action worked
 				if ($error != true) {
 					if ($action == 'create') {
@@ -9781,24 +10047,31 @@ if ( is_admin() ) {
 								foreach ($arr['styles'] as $prop_group => $arr2) {
 									if (is_array($arr2)) {
 										foreach ($arr2 as $prop => $value) {
-											// we're finally at property, does it have a default unit?
+
+										    // data structure was updated
+										    $value = !empty($value['value']) ? $value['value'] : $value;
+
+										    // we're finally at property, does it have a default unit?
 											if (!empty($this->preferences['my_props'][$prop_group]['pg_props'][$prop]['default_unit'])){
 												$default_unit = $this->preferences['my_props'][$prop_group]['pg_props'][$prop]['default_unit'];
 											} else {
 												continue;
 											}
+
 											// it has a default, is it something other than px (implicit)
 											if ($default_unit == 'px (implicit)'){
-												// we should convert pixel values to plain numbers (if not custom code)
+
+											    // we should convert pixel values to plain numbers (if not custom code)
 												if ($prop_group != 'code' and strpos($value, 'px') !== false){
-													$filtered_json[$section_name][$css_selector]['styles'][$prop_group][$prop] =
-														str_replace('px', '', $value);
+													$filtered_json[$section_name][$css_selector]['styles'][$prop_group][$prop]['value'] =
+														preg_replace('/px$/', '', $value);
 												}
 												continue;
 											}
+
 											// if the value is a unitless number apply px as the user doesn't have implicit pixels set
 											if (is_numeric($value) and $value != 0){
-												$filtered_json[$section_name][$css_selector]['styles'][$prop_group][$prop] = $value . 'px';
+												$filtered_json[$section_name][$css_selector]['styles'][$prop_group][$prop]['value'] = $value . 'px';
 											}
 										}
 									}
@@ -10667,19 +10940,29 @@ DateCreated: '.date('Y-m-d').'
 	// check file types (microthemer)
 	if (!function_exists('tvr_microthemer_getOnlyValid')) {
 		function tvr_microthemer_getOnlyValid($p_event, &$p_header) {
-			// avoid null byte hack (THX to Dominic Szablewski)
-			if ( strpos($p_header['filename'], chr(0) ) !== false )
+
+		    // avoid null byte hack (THX to Dominic Szablewski)
+			if ( strpos($p_header['filename'], chr(0) ) !== false ){
 				$p_header['filename'] = substr ( $p_header['filename'], 0, strpos($p_header['filename'], chr(0) ));
+            }
+
 			$info = pathinfo($p_header['filename']);
+
 			// check for extension
 			$ext = array('jpeg', 'jpg', 'png', 'gif', 'txt', 'json', 'psd', 'ai');
-			if ( in_array( strtolower($info['extension']), $ext) ) {
+			$check_ext = strtolower($info['extension']);
+			if ( in_array($check_ext, $ext) ) {
 				// For MAC skip the ".image" files
-				if ($info['basename']{0} == '.' )
+				if ($info['basename'][0] == '.' ){
 					return 0;
-				else
+                }
+
+				else {
 					return 1;
+                }
+
 			}
+
 			// ----- all other files are skipped
 			else {
 				return 0;
@@ -10734,9 +11017,8 @@ if (!is_admin()) {
 			var $preferencesName = 'preferences_themer_loader';
 			// @var array $preferences Stores the ui options for this plugin
 			var $preferences = array();
-			var $version = '6.0.0.0';
+			var $version = '6.0.8.0';
 			var $microthemeruipage = 'tvr-microthemer.php';
-			var $mt_front_nonce = 'mt-temp-nonce';
 			var $file_stub = '';
 			var $min_stub = '';
 			var $num_save_append = '';
@@ -10776,13 +11058,21 @@ if (!is_admin()) {
 
 				// add active-styles.css (if not preview)
 				if (!isset($_GET['tvr_micro'])) {
-					// note changed from wp_print_styles on Feb 22nd 2018 as discovered it is deprecated
+
+				    // note changed from wp_print_styles on Feb 22nd 2018 as discovered it is deprecated
 					// the inactive code was using wp_enqueue_scripts, so now the will be consistent
-					add_action( 'wp_enqueue_scripts', array(&$this, 'add_css'), 999999);
-				}
-				// else add the preview css - old functionality for the marketplace
-				else {
-					//add_action( 'wp_print_styles', array(&$this, 'add_preview_css'), 999999);
+
+                    $action_order = 999999;
+                    $action_hook = 'wp_enqueue_scripts';
+
+                    // alternative order if user specifies stylesheet must come after Oxygen
+                    if (!empty($this->preferences['after_oxy_css'])){
+	                    $action_order = 11000000; // 11m
+	                    $action_hook = 'wp_head';
+                    }
+
+                    // add css
+                    add_action( $action_hook, array(&$this, 'add_css'), $action_order);
 				}
 
 				// add shortcut to Microthemer
@@ -10797,6 +11087,11 @@ if (!is_admin()) {
 
 				// add meta_tag if logged in - else undefined iframeUrl variable creates break error
 				add_action( 'wp_head', array(&$this, 'add_meta_tag'));
+
+				// add <base> URL for when WP installs use a sub-directory
+				/*if (!empty($this->preferences['relative_base_url'])) {
+					add_action('wp_head', array(&$this, 'add_base_url_tag') );
+				}*/
 
 				// add frontend script
 				add_action( 'wp_enqueue_scripts', array(&$this, 'add_js'), 999999);
@@ -10853,9 +11148,6 @@ if (!is_admin()) {
 					return false;
 				}
 
-				// wp_create_nonce must be inside a function/hooked else it fails
-				$this->mt_front_nonce = wp_create_nonce( 'mt-front-nonce' );
-
 				if (empty($this->preferences['top_level_shortcut'])
 				    or $this->preferences['top_level_shortcut'] == 1){
 					$parent = false;
@@ -10872,7 +11164,7 @@ if (!is_admin()) {
 				// MT admin page with front page param passed in for quick editing
 				$href = $this->wp_blog_admin_url . 'admin.php?page=' . $this->microthemeruipage .
 				        '&mt_preview_url=' . rawurlencode($currentPageURL)
-				        . '&_wpnonce=' . $this->mt_front_nonce;
+				        . '&_wpnonce=' . wp_create_nonce( 'mt-preview-nonce' );
 
 				$args = array(
 					'id' => 'wp-mcr-shortcut',
@@ -10914,70 +11206,48 @@ if (!is_admin()) {
 				} else {
 					$append = $this->num_save_append;
 				}
+
 				if ( !empty($this->preferences['active_theme']) ) {
 
-				    // register css - check theme name so relevant dependencies can be added
-					$deps = $this->dep_stylesheets();
+					// special case for loading CSS after Oxygen
+					$add_styles = !empty($this->preferences['after_oxy_css']);
 
 					// check if Google Fonts stylesheet needs to be called
 					if (!empty($this->preferences['g_fonts_used'])) {
-
 						tvr_common::add_user_google_fonts($this->preferences);
-
-					    // use g_url_with_subsets value generated when writing stylesheet
-                        /*$p = &$this->preferences;
-                        $google_url = !empty($p['g_url_with_subsets'])
-                            ? $p['g_url_with_subsets']
-
-	                        // fallback to g_url if user has yet to save settings since g_url_with_subsets was added
-                            : !empty($p['gfont_subset']) ? $p['g_url'].$p['gfont_subset'] : $p['g_url'];
-
-						if (!empty($google_url)){
-							wp_register_style( 'microthemer_g_font', $google_url, false);
-							wp_enqueue_style( 'microthemer_g_font' );
-                        }*/
-
 					}
 
+					// add active-styles
 					$url = $this->micro_root_url. $this->min_stub . $this->file_stub .'-styles.css';
-					wp_register_style( 'microthemer', $url . $append, $deps );
-					wp_enqueue_style( 'microthemer' );
+					$formatted_url = $url . $append;
+					$mt_handle = 'microthemer';
+					tvr_common::mt_enqueue_or_add($add_styles, $mt_handle, $formatted_url);
 
 					// check if ie-specific stylesheets need to be called
 					global $is_IE;
 					if ( $is_IE ) {
-						global $wp_styles;
+
 						foreach ($this->preferences['ie_css'] as $key => $cond){
 
 							if (!empty($this->preferences['ie_css'][$key])) {
 								$file_stub = ($this->file_stub == 'draft') ? $this->file_stub.'-' : '';
 								$path = $this->micro_root_url.$file_stub.'ie-'.$key.'.css'.$append;
-								wp_enqueue_style( 'tvr_ie_'.$key, $path);
-								$wp_styles->add_data('tvr_ie_'.$key, 'conditional', $cond);
+								$ie_handle = 'tvr_ie_'.$key;
+								tvr_common::mt_enqueue_or_add(true, $ie_handle, $path, 'conditional', $cond);
 							}
 						}
 					}
 
 				}
-				// only include firebug style overlay css if user is logged in
-				if (is_user_logged_in() and TVR_MICRO_VARIANT == 'themer') {
-					// register
-					$min = !TVR_DEV_MODE ? '.min' : '';
-					wp_register_style( 'micro'.TVR_MICRO_VARIANT.'-overlay-css',
-						$this->thispluginurl.'css/frontend'.$min.'.css?v='.$this->version );
-					// enqueue
-					wp_enqueue_style( 'micro'.TVR_MICRO_VARIANT.'-overlay-css');
-				}
-			}
 
-			// add preview css
-			function add_preview_css() {
-				if (is_user_logged_in()) {
-					$append = '?nomtcache=' . $this->time;
+				// UI frontend CSS
+				if (is_user_logged_in() and TVR_MICRO_VARIANT == 'themer') {
+					$min = !TVR_DEV_MODE ? '.min' : '';
+					$ui_frontend_handle = 'micro'.TVR_MICRO_VARIANT.'-overlay-css';
+					$ui_frontend_url = $this->thispluginurl.'css/frontend'.$min.'.css?v='.$this->version;
+					tvr_common::mt_enqueue_or_add($add_styles, $ui_frontend_handle, $ui_frontend_url);
 				}
-				$deps = $this->dep_stylesheets();
-				wp_register_style( 'micro_theme_preview', $this->micro_root_url.intval($_GET['tvr_micro']).'.css'.$append, $deps );
-				wp_enqueue_style( 'micro_theme_preview' );
+
 			}
 
 			// get the current page for iframe-meta and loading WP page after clicking WP admin MT option
@@ -11023,6 +11293,11 @@ if (!is_admin()) {
                     <meta name='mt-show-admin-bar' id='mt-show-admin-bar' content='<?php echo $this->preferences['admin_bar_preview'];?>' /><?php
 				}
 			}
+
+			// add meta iframe-url tracker (for remembering the preview page)
+			/*function add_base_url_tag() {
+			    echo '<base href="'.esc_attr($this->preferences['relative_base_url']).'">';
+			}*/
 
 			// add firebug style overlay js if user is logged in
 			function add_js() {

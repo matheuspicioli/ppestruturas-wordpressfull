@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the WordPress - 5.3.x - Development - Administration package.
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2019-12-04 21:18:26+0000\n"
+"PO-Revision-Date: 2020-02-04 11:20:43+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -3417,7 +3417,7 @@ msgstr "Você sabia?"
 
 #: wp-admin/credits.php:140
 msgid "Noteworthy Contributors"
-msgstr "Contribuidores notáveis"
+msgstr "Colaboradores notáveis"
 
 #: wp-admin/theme-editor.php:369
 msgid "If you decide to go ahead with direct edits anyway, use a file manager to create a copy with a new name and hang on to the original. That way, you can re-enable a functional version if something goes wrong."
@@ -4222,7 +4222,7 @@ msgstr "Atualizar o WordPress agora"
 #. URL to network admin, 4: Accessibility text.
 #: wp-admin/includes/update.php:287
 msgid "<a href=\"%1$s\">WordPress %2$s</a> is available! <a href=\"%3$s\" aria-label=\"%4$s\">Please update now</a>."
-msgstr "<a href=\"%1$s\">O WordPress %2$s</a> esta disponível! <a href=\"%3$s\" aria-label=\"%4$s\">Atualize agora</a>."
+msgstr "<a href=\"%1$s\">O WordPress %2$s</a> está disponível! <a href=\"%3$s\" aria-label=\"%4$s\">Atualize agora</a>."
 
 #: wp-admin/includes/theme.php:275
 msgid "Portfolio"
@@ -8368,7 +8368,7 @@ msgstr "As configurações de publicar por e-mail permite enviar um e-mail para 
 
 #: wp-admin/users.php:45
 msgid "You can filter the list of users by User Role using the text links above the users list to show All, Administrator, Editor, Author, Contributor, or Subscriber. The default view is to show all users. Unused User Roles are not listed."
-msgstr "Você pode filtrar a lista de usuários por função de usuário usando os links de texto acima da lista de usuários para mostrar todos, administrador, editor, autor, contribuidor, ou assinante. A visualização padrão mostra todos. Não serão listas as funções de usuário não utilizadas."
+msgstr "Você pode filtrar a lista de usuários por função de usuário usando os links de texto acima da lista de usuários para mostrar todos, administrador, editor, autor, colaborador ou assinante. A visualização padrão mostra todos. Não serão listadas as funções de usuário não usadas."
 
 #: wp-admin/user-new.php:388
 msgid "Enter the email address of an existing user on this network to invite them to this site. That person will be sent an email asking them to confirm the invite."
@@ -9315,7 +9315,7 @@ msgstr "Todos os comentários"
 #. translators: %s: The current WordPress version number.
 #: wp-admin/credits.php:139
 msgid "Core Contributors to WordPress %s"
-msgstr "Contribuidores do núcleo do WordPress %s"
+msgstr "Colaboradores dos arquivos básicos do WordPress %s"
 
 #: wp-admin/credits.php:141
 msgid "Cofounder, Project Lead"

@@ -33,33 +33,32 @@ $grid_control = '
 	<div class="graph-area">
 		<div class="grid-control">
 	
-		<span class="clear-all-grid-styles" data-input-level="group" title="'.esc_attr__('Clear all grid styles', 'microthemer').'"></span>
+			<span class="clear-all-grid-styles" data-input-level="group" title="'.esc_attr__('Clear all grid styles', 'microthemer').'"></span>
+		
+			<ul class="col-labels">'.$col_labels.'</ul>
+			<ul class="row-labels">'.$row_labels.'</ul>
+			
+			<div class="mt-grid-areas"></div>
+			
+			<div class="implicit-grid"></div>
+			<div class="explicit-grid">
+				<div class="explicit-grid-toggle" title="'.esc_attr__('Drag grid template', 'microthemer').'"></div>
+			</div>
+			
+			<div class="grid-canvas grid-stack"></div>
+			
+			<div class="mt-lookup-grid"></div>
 	
-		<ul class="col-labels">'.$col_labels.'</ul>
-		<ul class="row-labels">'.$row_labels.'</ul>
-		
-		<div class="mt-grid-areas"></div>
-		
-		<div class="explicit-grid">
-			<div class="explicit-grid-toggle" title="'.esc_attr__('Drag grid', 'microthemer').'"></div>
 		</div>
 		
-		<div class="grid-canvas grid-stack"></div>
-		
-		<div class="mt-lookup-grid"></div>
-	
-	</div>
 	</div>
 	
 	<div class="nth-item-radios tab-control tab-control-griditems">
 		<span class="nth-item-heading">nth</span>
 		<ul class="fake-radio-parent"></ul>
 	</div>
-	
-</div>	
-	
-				
-';
+		
+</div>';
 
 
 // grid control end

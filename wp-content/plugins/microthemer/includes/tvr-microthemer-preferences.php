@@ -30,6 +30,7 @@ $this->display_log();
 			esc_html_x('General', '(General Preferences)', 'microthemer' ),
 			esc_html__('CSS/SCSS', 'microthemer'),
 			esc_html__('Language', 'microthemer'),
+			esc_html__('Integrations', 'microthemer'),
 			esc_html__('Inactive', 'microthemer')
 		)
 	); ?>
@@ -77,11 +78,11 @@ $this->display_log();
 					'explain' => __('Microthemer advises using Chrome if you are using an alternative because the interface runs noticeably faster in Chrome. But you can turn this off if you want.' , 'microthemer')
 				),*/
 
-				/*'safe_mode_notice' => array(
-					'label' => __('Display PHP safe mode warnings'),
-					'explain' => __('If your server has the PHP settings "safe mode" on, you may encounter permission errors when Microthemer tries to create directories. Microthemer will alert you to safe-mode being on. But if that\'s old news to you, you may want to disable the warnings about it.', 'microthemer')
+				'monitor_js_errors' => array(
+					'label' => __('Monitor general JavaScript errors on your site'),
+					'explain' => __('General JavaScript errors on your site can interfere with Microthemer, and other plugins. Microthemer can check for errors and warn you about them.', 'microthemer')
 				),
-				*/
+
 
 				'admin_bar_shortcut' => array(
 					'label' => __('Add a Microthemer shortcut to the WP admin bar', 'microthemer'),
@@ -125,7 +126,12 @@ $this->display_log();
 				'tooltip_delay' => array(
 					'label' => __('Tooltip delay time (in milliseconds)', 'microthemer'),
 					'explain' => __('Control how long it takes for a Microthemer tooltip to display. Set to "0" for instant, "native" to use the browser default tooltip on hover, or some value like "2000" for a 2 second delay (so it never shows when you don\'t need it to). The default is 500 milliseconds.', 'microthemer')
-				)
+				),
+                'num_history_points' => array(
+	                'label' => __('Number of recent revisions to store', 'microthemer'),
+	                'explain' => __('Choose how many revisions to store in the Database. The allowed range is 1-300. The default is 50. Saved revisions do not count towards the quota. Nor do pre-upgrade backups.', 'microthemer'),
+	                'combobox' => 'num_history_points',
+                )
 
 			);
 
@@ -196,6 +202,11 @@ $this->display_log();
 					'label' => __('Report color in hex values instead of RGB/A'),
 					'explain' => __('By default, Microthemer will report computed CSS color values in RGB/A format. Set this to "Yes" if you prefer the hex format.', 'microthemer')
 				),
+				'abs_image_paths' => array(
+					'label' => __('Use absolute background image URL paths', 'microthemer'),
+					'explain' => __('If you install WordPres in a sub-directory, setting this to "Yes" can fix issues with image paths.', 'microthemer'),
+				),
+
 				/*'pie_by_default' => array(
 					'label' => __('Always use CSS3 PIE polyfill where relevant', 'microthemer'),
 					'label_no' => __('(configure manually)', 'microthemer'),
@@ -224,13 +235,14 @@ $this->display_log();
 			// output CSS unit options
 			foreach($this->preferences['my_props'] as $prop_group => $array){
 
-				if ($prop_group == 'sug_values') continue;
+				// skip if non-valid or we've removed a property group
+			    if ($prop_group == 'sug_values' || empty($this->propertyoptions[$prop_group])) continue;
 
 				// loop through default unit props
 				if (!empty($this->preferences['my_props'][$prop_group]['pg_props'])){
 					$first = true;
 					foreach ($this->preferences['my_props'][$prop_group]['pg_props'] as $prop => $arr){
-						unset($units);
+					    unset($units);
 						// user doesn't need to set all padding (for instance) individually
 						$box_model_rel = false;
 						$first_in_group = false;
@@ -314,7 +326,23 @@ $this->display_log();
 		</ul>
 	</div>
 
-	<!-- Tab 4 (Inactive) -->
+    <!-- Tab 4 (Integrations) -->
+    <div class="dialog-tab-field dialog-tab-field-<?php echo ++$tab_count; ?> hidden">
+        <ul class="form-field-list css_units">
+			<?php
+			// yes no options
+			$yes_no = array(
+				'after_oxy_css' => array(
+					'label' => __('Load Microthemer CSS after Oxygen CSS', 'microthemer'),
+					'explain' => __("Ensure Microthemer's active-styles.css stylesheet loads after Oxygen stylesheets", 'microthemer'),
+				)
+			);
+			$this->output_radio_input_lis($yes_no);
+			?>
+        </ul>
+    </div>
+
+	<!-- Tab 5 (Inactive) -->
 	<div class="dialog-tab-field dialog-tab-field-<?php echo ++$tab_count; ?> hidden">
 		<ul class="form-field-list css_units">
 			<?php

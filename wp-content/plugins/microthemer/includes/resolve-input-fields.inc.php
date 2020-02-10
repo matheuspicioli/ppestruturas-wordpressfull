@@ -380,14 +380,6 @@ if (!empty($prop_data['sub_label'])){
 			$sub_label_html.= $sub_chain_icon;
 		}
 
-
-
-		// do we need a GUI shortcut button in editor gutter?
-		/*if ($this->subgroup === 'code'){
-			//$rel = $prop_data['rel'];
-			$sub_label_html.= '<span class="gui-shortcut">GUI</span>';
-		}*/
-
 		$sub_label_html.= '
 	</div>';
 }
@@ -625,29 +617,43 @@ if (!empty($prop_data['linebreak']) and $prop_data['linebreak'] == '1') {
 // global UI toggle for grid highlight
 if (!empty($prop_data['highlight_grid_toggle'])) {
 
-	$enable_text  = esc_attr__('Enable highlight', 'microthemer');
-	$disable_text = esc_attr__('Disable highlight', 'microthemer');
 
-	$html .= '<div class="grid-highlight-wrap">' .
 
-	$this->ui_toggle(
+
+	$html .= '<div class="grid-options-wrap">';
+
+	// toggle grid highlight
+	$html.= $this->ui_toggle(
          'grid_highlight',
-         $enable_text,
-         $disable_text,
-         !empty($this->preferences['grid_highlight']),
+		 esc_attr__('Enable highlight', 'microthemer'),
+		 esc_attr__('Disable highlight', 'microthemer'),
+         0,
          'grid-highlight',
          false,
          array(
-	         'text'     => 'conditional',
 	         'dataAtts' => array(
-		         'text-pos' => $enable_text,
-		         'text-neg' => $disable_text,
+		         'fhtml' => 1
 	         ),
-		)
-    )
-    .
+		 )
+    );
 
-    '</div>';
+	// expand / collapse grid
+	$html.= $this->ui_toggle(
+		 'expand_grid',
+		 esc_attr__('Expand grid', 'microthemer'),
+		 esc_attr__('Collapse grid', 'microthemer'),
+		 0,
+		 'expand-grid',
+		 false,
+		 array(
+		     'dataAtts' => array(
+		         'no-save' => 1
+		     ),
+		 )
+	)
+
+	.'
+    </div>';
 
 }
 

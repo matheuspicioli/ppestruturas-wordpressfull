@@ -1721,7 +1721,13 @@ $propertyOptions['background']['background_clip'] = array(
 	'select_options' => array(
 		'border-box',
 		'padding-box',
-		'content-box'
+		'content-box',
+		'text'
+	),
+	'prefixes' => array(
+		'property' => array(
+			'-webkit-background-clip',
+		)
 	),
 	'icon' => '26, 14',
 	// ref
@@ -3729,7 +3735,8 @@ $grid_special = array(
 	'fit-content(50%)',
 	'repeat(2, 1fr)',
 	'min-content',
-	'max-content'
+	'max-content',
+	'repeat(auto-fit, minmax(320px, 1fr))'
 );
 $grid_sizes = array_merge($grid_special, array('none', 'auto', '1fr', '2fr',  '100', '200',  '25%', '50%'));
 
@@ -4086,7 +4093,7 @@ generated when content flows outside of the <i>explicitly</i> defined grid-templ
 
 // align
 
-// justify content (x-axis)
+// justify items (x-axis)
 $propertyOptions['grid']['justify_items_grid'] = array(
 	'short_label' => esc_html__('Justify Items', 'microthemer'),
 	'label' => esc_attr__('Justify Items', 'microthemer'),
@@ -4117,7 +4124,7 @@ $propertyOptions['grid']['justify_items_grid'] = array(
 // justify content (main-axis)
 $propertyOptions['grid']['justify_content_grid'] = array(
 	'short_label' => esc_html__('Justify Content', 'microthemer'),
-	'label' => esc_attr__('Justify Content', 'microthemer'),
+	'label' => esc_attr__('Justify Content (grid)', 'microthemer'),
 	//'sub_slug' => 'justify',
 	//'input-class' => 'size-7',
 	'field-class' => 'icon-size-2',
@@ -4145,7 +4152,7 @@ $propertyOptions['grid']['justify_content_grid'] = array(
 // align items (y-axis)
 $propertyOptions['grid']['align_items_grid'] = array(
 	'short_label' => esc_html__('Align Items', 'microthemer'),
-	'label' => esc_attr__('Align Items', 'microthemer'),
+	'label' => esc_attr__('Align Items (grid)', 'microthemer'),
 	'sub_label' => esc_html__('Align', 'microthemer'),
 	'sub_slug' => 'aligngrid',
 	'tab_control' => 'gridalign',
@@ -4175,7 +4182,7 @@ $propertyOptions['grid']['align_items_grid'] = array(
 // align content (multi-line cross-axis)
 $propertyOptions['grid']['align_content_grid'] = array(
 	'short_label' => esc_html__('Align Content', 'microthemer'),
-	'label' => esc_attr__('Align Content', 'microthemer'),
+	'label' => esc_attr__('Align Content (grid)', 'microthemer'),
 	'tab_control' => 'gridalign',
 	//'sub_slug' => 'align',
 	//'linebreak' => 1,
@@ -4245,7 +4252,13 @@ $propertyOptions['grid']['grid_template_areas_add'] = array(
 	'input-class' => 'grid-area-add',
 	//'type' => 'textarea',
 	'select_options' => $template_areas_add,
-	'icon' => '8, 8, B'
+	'icon' => '2, 4',
+	// ref
+	'ref_desc' => "<p>Custom Microthemer option. Enter the name of a grid-area, then use the grid control canvas to define its size and position. Microthemer will then generate valid grid-template-areas ASCII art for you.</p>
+<p>The grid-template-areas property is most useful when writing CSS grid code by hand - to visually see the structure of the grid. But Microthemer's grid control serves that function, so most users will not need to set grid-template-areas.</p>",
+	'ref_values' => array(
+		'name' => "A single word with no spaces.",
+	)
 );
 
 
@@ -4522,6 +4535,11 @@ $propertyOptions['position']['position'] = array(
 		'fixed',
 		'static',
 		'sticky'
+	),
+	'prefixes' => array(
+		'values' => array(
+			'sticky' => array('-webkit-sticky'),
+		)
 	),
 	'icon' => '40, 14',
 	// ref
@@ -5801,7 +5819,6 @@ $propertyOptions['behaviour']['opacity'] = array(
 $propertyOptions['behaviour']['content'] = array(
 	'short_label' => esc_html__('Content', 'microthemer'),
 	'label' => esc_attr__('Content', 'microthemer'),
-	'last_in_sub' => 1,
 	'field-class' => 'icon-size-3',
 	//'input-class' => 'size-0b',
 	'select_options' => array(
@@ -5860,7 +5877,26 @@ $propertyOptions['behaviour']['content'] = array(
 	)
 );
 
+/* Todo - along with object position
+ * $propertyOptions['behaviour']['object_fit'] = array(
+	'short_label' => esc_html__('Object Fit', 'microthemer'),
+	'label' => esc_attr__('Object Fit', 'microthemer'),
+	'last_in_sub' => 1,
+	'field-class' => 'icon-size-3',
+	//'input-class' => 'size-0b',
+	'select_options' => array(
+		'fill',
+		'contain',
+		'cover',
+		'scale-down',
+		'none'
+	),
 
+	'icon' => '20, 17',
+	// ref
+	'ref_desc' => "<p>The content property is used with the :before and :after pseudo-elements, to insert generated content.</p>",
+
+);*/
 
 
 $extraOptionsReference['CSS3_PIE']['CSS3_PIE'] = array(

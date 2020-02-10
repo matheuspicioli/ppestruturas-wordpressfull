@@ -1,5 +1,224 @@
 CHANGELOG
 
+= 6.0.8.0 (Feb 5th 2020) =
+
+# Bugs fixed
+* Possible errors when performing actions in MT when frontend had not fully loaded: 's.get_current_url is not a function' and 's.get_style_nodes is not a function'.
+* Box-shadow inset keyword was getting lost when editing styles via the editor.
+
+# Change
+* 'U' icon for 'jumping' to a UI property from the code editor changes to a 'J', due to keyboard shortcut being changed to Ctrl+Alt+J. This was only recently changed from G to U, but Ctrl+Alt+U wasn't suitable as it prints a special u character with an accent.
+
+= 6.0.7.7 (Feb 5th 2020) =
+
+# Bugs fixed
+* Error importing arbitrary CSS into Microthemer via Packs > Import > CSS Stylesheet.
+
+= 6.0.7.6 (Jan 30th 2020) =
+
+# Change
+* 'G' icon for switching to a UI property from the code editor changes to a 'U', and keyboard shortcut changed to Ctrl+Alt+U, as Ctrl+Alt+U is reserved for viewing the generated CSS code.
+
+# Bugs fixed
+* The selector label and folder fields in targeting mode are redundant in the View > Full code editor view. And so they are now hidden.
+
+= 6.0.7.4 (Jan 30th 2020) =
+
+# Enhancement
+* MT JavaScript error checking can be turned off via Preferences.
+
+= 6.0.7.3 (Jan 23rd 2020) =
+
+# Change
+* Label for unlock field clarifies unlock code can be used as well as email.
+* Side-docked style options display in two columns at a smaller width (360px).
+
+# Bugs fixed
+* Microthemer was stripping pixel units from calc() functions when restoring a previous save point.
+* With style options docked left, grid control was not expanding with width of sidebar.
+
+= 6.0.6.9 (Jan 20th 2020) =
+
+# Change
+* The pre-upgrade backup Microthemer creates is stored in the revisions table as
+"x.x.x.1 settings (before updating to x.x.x.2)", rather than "Pre-upgrade backup settings". This revision remains available until the next upgrade overwrites it (unless you choose to save it before upgrading again). Backup design packs are no longer auto-created before major MT version updates.
+
+# Bugs fixed
+* Possible PHP warnings when upgrading from an older version of MT.
+* MT was creating multiple backup zip files when upgrading MT rather than overwriting the previous. MT only creates backups in the history table now.
+* White lines could appear at the top right of the revision history screen.
+* Selectors could be blank after upgrading from old version of MT (requiring use of the 'Regenerate CSS' option in preferences to fix).
+* Browser fallbacks e.g. 'width:10px; width: 2vw;' not being stripped from Microthemer's CSS editor.
+* Computed styles were not updating in response to changes in the viewport in Chrome. This could sometimes results in artificial horizontal scrollbars in mobile views.
+
+= 6.0.6.2 (Jan 16th 2020) =
+
+# Bugs fixed
+* Moving the current selector to another folder caused the style fields to disappear.
+* The transition event value field was not displaying when returning to the transition group, even when the event value was set to :hover or :focus.
+
+= 6.0.6.0 (Jan 11th 2020) =
+
+# Bugs fixed
+* PHP warning: Deprecated: Unparenthesized a ? b : c ? d : e is deprecated.
+* PHP warning: Array and string offset access syntax with curly braces is deprecated.
+* With non-typical WP head setup: Uncaught NotFoundError: Failed to execute 'insertBefore' on 'Node.
+* Fixed issue when upgrading from a very old version of MT to the 6.x range.
+* Fixed issue with previously entered style values in suggestions dropdown not being remembered.
+
+= 6.0.5.6 (Jan 9th 2020) =
+
+# Change
+* Targeting suggestion dropdown menus are more obviously dropdown menus. And match the formatting of the styling dropdown menus.
+
+# Enhancement
+* Grid control can be expanded using a new icon next to the grid highlight icon, which has lost it's text label.
+* Number of history snapshots configurable via General > Preferences.
+* History snapshots can be saved permanently.
+
+# Bugs fixed
+* Unnecessary Sass compilation warning when first enabling Sass on a fresh install.
+* Empty selectors could cause issues for subsequent selectors when multiple selectors were added to the custom code editor (to the left of the Font property group). Also, MT was auto-clearing empty selectors when returning to the code editor.
+* The code editor was throwing a false positive warning when CSS functions like calc() or var() were used.
+* Some issues with the code editor scroll position not resuming correctly.
+
+= 6.0.4.7 (Jan 6th 2020) =
+
+# Enhancement
+* Elementor navigator can be docked right inside MT for mobile and tablet while preserving the correct preview width.
+* Improved MT-Elementor responsive view synchronisation.
+
+# Bugs fixed
+* Elementor device mode was not updating when using corresponding responsive MT tabs. The preview width was updating, but the Elementor UI wasn't updating.
+* CSS modifier :nth pseudo selectors were a bit misaligned.
+* Error importing arbitrary CSS via Packs > Import > CSS Stylesheet: Cannot read property 'replace' of undefined.
+* Grid highlight status was not remembered between MT interface reloads.
+* Deleting a selector entirely via the editor, including the brackets etc, defaulted back to the previous state of the selector (e.g. with original declarations) rather than an empty selector with no declarations.
+
+= 6.0.4.0 (Dec 31st 2019) =
+
+# Enhancement
+* New option for loading Microthemer CSS after Oxygen: Preferences > Integrations. This is enabled by default on new MT installs if Oxygen is already installed and activated.
+
+= 6.0.3.9 (Dec 20th 2019) =
+
+# Bugs fixed
+* Error uploading design pack: 'the link you followed has expired'
+
+= 6.0.3.8 (Dec 19th 2019) =
+
+# Enhancement
+* Grid highlight option added to grid properties.
+
+# Bugs fixed
+* Misalignment of radio inputs on high resolution displays.
+* Display of grid-auto properties when options docked to left.
+* CSS conflict with social icons plugin. MT's toggles were over-sized and purple.
+* The presence of a noscript tag caused issues for MT's HTML inspector 'click to select' functionality.
+
+= 6.0.3.3 (Dec 13th 2019) =
+
+# Bugs fixed
+* Intermittent error with dropdown menus: 'this.source is not a function'.
+* WP toolbar shortcut to MT wasn't loading the page or post relevant to the edit page/post screen from which it was clicked. Draft posts and pages can now be edited with MT more easily with this fix.
+
+= 6.0.3.1 (Dec 12th 2019) =
+
+# Change
+* Preview doesn't default to full width when using the MT icon to hide the Microthemer toolbar.
+
+# Bugs fixed
+* Blue dot on 'Item' tab wasn't updating correctly in single grid item view.
+* Elementor mobile control wasn't resizing the preview correctly if Elementor specific media queries were not active in Microthemer.
+* Grid item radio labels could display strangely with double-digit numbers.
+
+= 6.0.2.7 (Dec 5th 2019) =
+
+# Bugs fixed
+* Stock animations were not working on the frontend since the 6.x beta release.
+
+= 6.0.2.6 (Dec 4th 2019) =
+
+# Enhancement
+* Added option to use absolute background image paths. This is useful when working with WP sites installed in a sub-directory.
+* prefix '-webkit-sticky' is now added by Microthemer.
+
+# Bugs fixed
+* Unnecessary Sass compilation warning when creating a new selector: 'Data context created with empty source string'.
+* The code editor recognises 'sticky' as a valid value for the position property.
+* Custom CSS comments were being stripped from the code editor
+
+= 6.0.2.1 (Dec 2nd, 2019) =
+
+# Enhancement
+* MT code editor recognises property scroll-behavior.
+* Background-clip property has new 'text' value.
+
+# Bugs fixed
+* MT loaded its styles after Oxygen styles when working inside MT, but before on the site frontend. This meant styles that needed overriding with greater CSS specificity could fo unnoticed until viewing the site outside MT.
+
+= 6.0.1.8 (Dec 1st, 2019) =
+
+# Bugs fixed
+* Under some conditions the CSS property fields could load twice.
+* Naming folders or selectors with plain integers could cause issues.
+* Disabled grid item tabs didn't show line through after reloading property group.
+
+= 6.0.1.5 (Nov 28th, 2019) =
+
+# Change
+* Highest min-width breakpoint is 1400 rather than 1600, as 1600 is larger than standard laptops.
+
+= 6.0.1.4 (Nov 28th, 2019) =
+
+# Change
+* New min and max media query sets added. The label for the default media queries has also been tweaked to more accurately reflect the mix of media queries included. As well as flag it more clearly as the default set. Should it still be the default set? Is the new 'Min and max' set more useful? Please let us know!
+
+= 6.0.1.3 (Nov 27th, 2019) =
+
+# Bugs fixed
+* Cannot read property 'coordinates' of undefined error could happen when clearing grid item values.
+* Duplicate grid-area values could be generated when rapidly dragging grid control items.
+
+= 6.0.1.1 (Nov 26th, 2019) =
+
+# Bugs fixed
+* Grid control items fix in previous update wasn't quite finished.
+
+= 6.0.1.0 (Nov 26th, 2019) =
+
+# Enhancement
+* Added suggested value to grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)). This can be used to make grid items responsive without using media queries. It's magic!
+
+# Bugs fixed
+* Scroll buttons displayed to the right of the border property group even when they weren't needed.
+* Undefined JS error.
+* Under some conditions the grid control items could get out of sync with the items they represent.
+
+= 6.0.0.6 (Nov 24th, 2019) =
+
+# Bugs fixed
+* Color picker didn't show hex/rgba values
+* Blue dots appeared on grid align and areas tabs on newly created selectors even if no value set.
+
+= 6.0.0.4 (Nov 24th, 2019) =
+
+# Major Bug fixed
+* Updating to version 6 from a 5.x version caused Microthemer's stylesheet to be blank.
+
+= 6.0.0.3 (Nov 22nd, 2019) =
+
+# Bugs fixed
+* The new grid alignment properties were not syncing properly with the code editor.
+
+= 6.0.0.2 (Nov 22nd, 2019) =
+
+# Enhancement
+* Grid boundary only shows explicitly defined rows or columns, rather than including implicit tracks. This can help users identify issue from dragging items outside of the explicit grid.
+
+# Bugs fixed
+* The blue dots on the grid sub tabs were not always updating correctly.
+
 = 6.0.0.0 (Nov 22nd, 2019) =
 
 # Enhancement

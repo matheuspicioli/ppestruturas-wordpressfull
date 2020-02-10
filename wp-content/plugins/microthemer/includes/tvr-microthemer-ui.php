@@ -5,6 +5,7 @@ if(preg_match('#' . basename(__FILE__) . '#', $_SERVER['PHP_SELF'])) {
 	die('Please do not call this page directly.');
 }
 
+//$this->show_me = 'herehere: ' . $this->check_table_exists('wp_micro_revisions', true);
 
 /*if (method_exists('Elementor\Core\Responsive\Responsive', 'get_breakpoints')){
 	$this->show_me = '<pre>'.print_r(Elementor\Core\Responsive\Responsive::get_breakpoints(), true). '</pre>';
@@ -109,7 +110,7 @@ $this->preferences['show_extra_actions'] ? $ui_class.= ' show_extra_actions' : f
 $this->preferences['dock_editor_left'] ? $ui_class.= ' dock_editor_left' : false;
 $this->preferences['dock_options_left'] ? $ui_class.= ' dock_options_left' : false;
 $this->preferences['detach_preview'] ? $ui_class.= ' detach_preview' : false;
-$this->preferences['server_scss'] ? $ui_class.= ' server_scss' : false;
+!empty($this->preferences['server_scss']) ? $ui_class.= ' server_scss' : false;
 
 // signal if 3rd party plugins are active
 foreach ($this->integrations as $intKey => $val){
@@ -280,7 +281,7 @@ if ($this->edge_mode['active']){
 
 								if ($key == 'hand_coded_css' or
                                     $key == 'js' or
-                                    !$this->preferences['hide_ie_tabs']){
+                                    empty($this->preferences['hide_ie_tabs'])){
 									echo '<span class="css-tab mt-tab css-tab-'.$arr['tab-key'].' show" rel="'.$arr['tab-key'].'">'.$arr['label'].'</span>';
 								}
 
@@ -308,7 +309,7 @@ if ($this->edge_mode['active']){
                                         ? $this->options['non_section']['ie_css']
                                         : array();
 									$name = 'tvr_mcth[non_section][ie_css]';
-									$include_editor = !$this->preferences['hide_ie_tabs'];
+									$include_editor = empty($this->preferences['hide_ie_tabs']);
 								}
 
 								if (!$include_editor){
@@ -425,7 +426,7 @@ if ($this->edge_mode['active']){
 									<span class="tvr-input-wrap wizard-folder-wrap" >
 										<input type="text" class="combobox wizard-folder has-arrows wizard-input"
 											   id="wizard_folder" name="wizard_folder" rel="cur_folders" value=""
-											   data-ph-title="<?php esc_attr_e("Enter new or select a folder...", 'microthemer'); ?>" />
+											   data-ph-title="<?php esc_attr_e("Enter or select a folder", 'microthemer'); ?>" />
 										<span class="combo-arrow"></span>
 									</span>
 							</div>
@@ -695,7 +696,9 @@ if ($this->edge_mode['active']){
 				)*/
 				?>
 
-				<?php echo $this->show_me; ?>
+				<?php
+                echo $this->show_me;
+				?>
 
 
 			</div>
@@ -828,7 +831,7 @@ if ($this->edge_mode['active']){
                     </span>
                 </div>
 
-                <span class="gui-shortcut" title="Ctrl + Alt + G">G</span>
+                <span class="gui-shortcut" title="Ctrl + Alt + J">J</span>
 
             </div>
 
@@ -1011,7 +1014,12 @@ if ($this->edge_mode['active']){
 						?>
 						<ul class="form-field-list">
 							<li>
-								<label class="text-label" title="<?php esc_attr_e("Enter your PayPal or Email Address - or the email address listed on 'My Downloads'", 'microthemer'); ?>"><?php esc_html_e('Enter PayPal email or see email in "My Downloads"', 'microthemer'); ?></label>
+								<label class="text-label" title="<?php esc_attr_e("Enter email or unlock code shown in 'My Downloads'", 'microthemer'); ?>">
+                                    <?php esc_html_e('Enter email or unlock code shown in ', 'microthemer'); ?>
+                                    <a href="https://themeover.com/my-account/" target="_blank">
+                                        <?php esc_html_e('My Downloads', 'microthemer'); ?>
+                                    </a>
+                                </label>
 								<input type='text' autocomplete="off" name='tvr_preferences[buyer_email]'
 									value='<?php echo $attempted_email; ?>' />
 							</li>
@@ -1710,7 +1718,10 @@ if ($this->edge_mode['active']){
 					foreach ($all_pos_tabs as $k => $arr){
 						if (!$arr['do']) continue;
 						++$i;
-						$show = $i === $this->preferences['generated_css_focus'] ? 'show' : '';
+						$show = (!empty($this->preferences['generated_css_focus']) && $i === $this->preferences['generated_css_focus']) ||
+						        (empty($this->preferences['generated_css_focus']) && $i === 0)
+                            ? 'show'
+                            : '';
 
 						?>
 						<div class="dialog-tab-field dialog-tab-field-<?php echo $i; ?> tab-field-<?php echo $k; ?> hidden <?php echo $show; ?>" rel="<?php echo $i; ?>">
